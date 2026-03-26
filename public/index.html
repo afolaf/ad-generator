@@ -17,7 +17,9 @@ input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; bo
 .row input { flex: 1; }
 .btn-main { padding: 10px 20px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
 .btn-main:disabled { background: #aaa; cursor: not-allowed; }
-.btn-sec { margin-top: 10px; background: #fff; color: #1a1a1a; border: 1px solid #ddd; font-size: 13px; padding: 7px 14px; border-radius: 8px; cursor: pointer; }
+.cat-btn { background:#fff; color:#1a1a1a; border:1px solid #ddd; font-size:13px; padding:7px 14px; border-radius:8px; cursor:pointer; }
+.cat-btn:hover { background:#f0f0f0; }
+.cat-btn:disabled { opacity:0.5; cursor:not-allowed; }
 .btn-sec:disabled { opacity: 0.5; cursor: not-allowed; }
 .lbl { font-size: 11px; font-weight: 600; color: #888; letter-spacing: 0.5px; text-transform: uppercase; margin: 16px 0 6px; }
 .val { font-size: 14px; line-height: 1.6; color: #1a1a1a; }
@@ -37,7 +39,14 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
       <input type="text" id="topic" placeholder="e.g. drinks that impact bone density" onkeydown="if(event.key==='Enter')generate()" />
       <button class="btn-main" id="genbtn" onclick="generate()">Generate</button>
     </div>
-    <button class="btn-sec" id="randbtn" onclick="randomTopic()">🎲 Random Topic</button>
+    <button class="btn-sec" id="randbtn" onclick="randomTopic(null)">🎲 Random Topic</button>
+    <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
+      <button class="cat-btn" onclick="randomTopic('HEALTH')">🏥 Health</button>
+      <button class="cat-btn" onclick="randomTopic('TRAVEL')">✈️ Travel</button>
+      <button class="cat-btn" onclick="randomTopic('VEHICLES')">🚗 Vehicles</button>
+      <button class="cat-btn" onclick="randomTopic('COMMERCE')">🛍️ Commerce</button>
+      <button class="cat-btn" onclick="randomTopic('FACTS')">💡 Facts You Didn't Know</button>
+    </div>
     <div class="err" id="errmsg"></div>
   </div>
 
