@@ -38,6 +38,18 @@ app.post("/api/generate", async (req, res) => {
     let raw = msg.content[0].text.trim().replace(/```json|```/g, "");
     const parsed = JSON.parse(raw);
 
+    // Hard block: if white starts with THESE, retry once with stricter prompt
+    if (parsed.white.toUpperCase().startsWith("THESE")) {
+      const retry = await client.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 400,
+        system: SYSTEM_PROMPT + "\n\nCRITICAL: Your previous response started with THESE which is FORBIDDEN. You MUST start with a different word. Use formats like: WHAT VITAMIN DEFICIENCY, X MISTAKES PEOPLE MAKE, WHAT HAPPENS WHEN, IS IT SAFE TO, HOW THIS MIGHT AFFECT, WHAT DOCTORS MAY, etc.",
+        messages: [{ role: "user", content: topic }],
+      });
+      raw = retry.content[0].text.trim().replace(/```json|```/g, "");
+      Object.assign(parsed, JSON.parse(raw));
+    }
+
     // Ensure headline ends with Info Guide (no pipe)
     let hl = parsed.headline.replace(/\s*\|\s*Info Guide$/i, "").replace(/\s*Info Guide$/i, "").trim();
     hl = hl.replace(/\.?\s*$/, "") + " Info Guide";
