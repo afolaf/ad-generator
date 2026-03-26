@@ -110,6 +110,9 @@ async function generate() {
   err.style.display = 'none';
   if (!topic) { err.textContent = 'Please enter a topic.'; err.style.display = 'block'; return; }
 
+  // If user typed manually (not via category button), reset category
+  if (!currentCategory) currentCategory = null;
+
   var btn = document.getElementById('genbtn');
   btn.disabled = true;
   btn.textContent = 'Generating...';
