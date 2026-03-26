@@ -74,38 +74,23 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
 </div>
 
 <script>
-var topics = [
-  'what vitamin deficiency might cause memory problems',
-  '3 mistakes people make when caring for a spouse with dementia',
-  'what happens when you take creatine before bed',
-  'signs you might have a vitamin deficiency',
-  'everyday snacks that could help your brain stay sharp',
-  'what vitamin deficiency might cause neck pain',
-  'dangerous habits to avoid as you get older',
-  '3 mistakes people make when using a home blood pressure monitor',
-  'what doctors may want you to know about bone density',
-  'what vitamin deficiency might cause joint stiffness',
-  'foods that may be damaging your liver',
-  '3 signs you might have a sinus infection',
-  'what may cause leg pain and tiredness',
-  'what vitamin deficiency might cause itchy skin',
-  'everyday habits that might slow down aging',
-  'what rheumatologists may want you to know about joint health',
-  'is it safe to eat bread if you cut the mold off',
-  '3 mistakes people make when cleaning hearing aids',
-  'what the worlds longest living people may eat for breakfast',
-  'what may cause frequent headaches',
-  'dog treats that might have safety risks',
-  'what a normal bone density looks like by age',
-  '3 common foods that might trigger inflammation',
-  'what cardiologists may want you to know about blood thinners',
-  'what vitamin deficiency might cause difficulty walking'
-];
+var usedTopics = [];
 
-function randomize() {
-  var t = topics[Math.floor(Math.random() * topics.length)];
-  document.getElementById('topic').value = t;
-  go();
+async function randomize() {
+  var btn = document.querySelector('[onclick="randomize()"]');
+  btn.textContent = '⏳ Generating...';
+  btn.disabled = true;
+
+  try {
+    var res = await fetch('/api/random-topic', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ used: usedTopics }) });
+    var d = await res.json();
+    usedTopics.push(d.topic);
+    document.getElementById('topic').value = d.topic;
+    go();
+  } catch(e) {
+    btn.textContent = '🎲 Random Topic';
+    btn.disabled = false;
+  }
 }
 
 async function go() {
