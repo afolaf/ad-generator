@@ -19,22 +19,25 @@
   button { padding: 10px 20px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
   button:disabled { background: #aaa; cursor: not-allowed; }
   .ad-wrap { display: flex; justify-content: center; margin-bottom: 24px; }
+  .ad-outer { width: 100%; max-width: 480px; position: relative; }
+  .ad-outer::before { content: ''; display: block; padding-top: 100%; }
   .ad-square {
-    background: #000; aspect-ratio: 1/1; width: 100%; max-width: 480px;
-    border-radius: 8px; display: flex; flex-direction: column;
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: #000; border-radius: 8px;
+    display: flex; flex-direction: column;
     align-items: center; justify-content: space-between; padding: 10% 8%;
   }
   .ad-text-main {
     flex: 1; display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: clamp(20px, 5vw, 36px); font-weight: 900;
+    color: #fff; font-size: clamp(18px, 4.5vw, 34px); font-weight: 900;
     text-align: center; line-height: 1.15; text-transform: uppercase;
     font-family: Impact, 'Arial Black', sans-serif;
   }
   .ad-yellow { color: #FFE500; }
   .ad-cta {
-    color: #fff; font-size: clamp(14px, 3vw, 22px); font-weight: 700;
+    color: #fff; font-size: clamp(13px, 3vw, 20px); font-weight: 700;
     text-align: center; letter-spacing: 0.08em; text-transform: uppercase;
-    font-family: Impact, 'Arial Black', sans-serif; padding-top: 8%;
+    font-family: Impact, 'Arial Black', sans-serif; padding-top: 6%;
   }
   .output { display: none; margin-top: 1.5rem; }
   .field-label { font-size: 11px; font-weight: 600; color: #888; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
@@ -67,9 +70,11 @@
     <div class="output" id="output">
       <hr>
       <div class="ad-wrap">
-        <div class="ad-square">
-          <div class="ad-text-main" id="out-script-display"></div>
-          <div class="ad-cta">LEARN MORE</div>
+        <div class="ad-outer">
+          <div class="ad-square">
+            <div class="ad-text-main" id="out-script-display"></div>
+            <div class="ad-cta">LEARN MORE</div>
+          </div>
         </div>
       </div>
       <div style="margin-bottom:16px">
