@@ -118,7 +118,7 @@ async function generate() {
     var r = await fetch('/api/generate', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({topic: topic})
+      body: JSON.stringify({topic: topic, category: currentCategory})
     });
     var d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Server error');
