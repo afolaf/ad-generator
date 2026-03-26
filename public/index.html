@@ -75,19 +75,19 @@
       <div style="margin-bottom:16px">
         <div class="field-label">Creative Script</div>
         <div class="field-value" id="out-script"></div>
-        <button class="copy-btn" onclick="copy('out-script',this)">Copy</button>
+        <button class="copy-btn" onclick="copyEl('out-script',this)">Copy</button>
       </div>
       <hr>
       <div style="margin-bottom:16px">
         <div class="field-label">Text</div>
         <div class="field-value" id="out-text"></div>
-        <button class="copy-btn" onclick="copy('out-text',this)">Copy</button>
+        <button class="copy-btn" onclick="copyEl('out-text',this)">Copy</button>
       </div>
       <hr>
       <div style="margin-bottom:16px">
         <div class="field-label">Headline</div>
         <div class="field-value" id="out-headline"></div>
-        <button class="copy-btn" onclick="copy('out-headline',this)">Copy</button>
+        <button class="copy-btn" onclick="copyEl('out-headline',this)">Copy</button>
       </div>
       <button onclick="copyAll()" style="background:#fff;color:#1a1a1a;border:1px solid #ddd;font-size:13px;padding:7px 14px;">Copy All</button>
     </div>
@@ -124,10 +124,8 @@ async function generate() {
     if (!res.ok) throw new Error((await res.json()).error || 'Server error');
     const d = await res.json();
 
-    // Ad preview
     document.getElementById('out-script-display').innerHTML =
-      `${d.white} <span style="color:#FFE500">${d.yellow}</span>`;
-
+      `${d.white} <span class="ad-yellow">${d.yellow}</span>`;
     document.getElementById('out-script').innerHTML =
       `${d.white} <span style="color:#b8860b;font-weight:600">${d.yellow}</span>`;
     document.getElementById('out-text').textContent = d.text;
@@ -144,7 +142,7 @@ async function generate() {
   }
 }
 
-function copy(id, btn) {
+function copyEl(id, btn) {
   navigator.clipboard.writeText(document.getElementById(id).innerText);
   btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = 'Copy', 1500);
 }
