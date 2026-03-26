@@ -10,17 +10,20 @@
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; padding: 2rem 1rem; }
 .container { max-width: 720px; margin: 0 auto; }
 h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
-p.sub { font-size: 14px; color: #666; margin-bottom: 2rem; }
+.sub { font-size: 14px; color: #666; margin-bottom: 2rem; }
 .card { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 1.5rem; margin-bottom: 1.5rem; }
-input[type="text"] { flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; width: 100%; }
+input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
 .row { display: flex; gap: 10px; }
-button.main { padding: 10px 20px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
-button.main:disabled { background: #aaa; }
+.row input { flex: 1; }
+.btn-main { padding: 10px 20px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.btn-main:disabled { background: #aaa; cursor: not-allowed; }
+.btn-sec { margin-top: 10px; background: #fff; color: #1a1a1a; border: 1px solid #ddd; font-size: 13px; padding: 7px 14px; border-radius: 8px; cursor: pointer; }
+.btn-sec:disabled { opacity: 0.5; cursor: not-allowed; }
 .lbl { font-size: 11px; font-weight: 600; color: #888; letter-spacing: 0.5px; text-transform: uppercase; margin: 16px 0 6px; }
 .val { font-size: 14px; line-height: 1.6; color: #1a1a1a; }
 .cbtn { font-size: 11px; padding: 3px 10px; background: #fff; color: #555; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; margin-top: 6px; }
 hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
-.err { color: #cc0000; font-size: 13px; margin-top: 8px; }
+.err { color: #cc0000; font-size: 13px; margin-top: 8px; display: none; }
 </style>
 </head>
 <body>
@@ -29,190 +32,173 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
   <p class="sub">Generate square image ad variations based on your approved template.</p>
 
   <div class="card">
-    <div style="font-size:13px;font-weight:500;color:#444;margin-bottom:6px">Topic / Onderwerp</div>
+    <div style="font-size:13px;font-weight:500;color:#444;margin-bottom:6px;">Topic / Onderwerp</div>
     <div class="row">
-      <input type="text" id="topic" placeholder="e.g. drinks that impact bone density" onkeydown="if(event.key==='Enter')go()" />
-      <button class="main" id="btn" onclick="go()">Generate</button>
+      <input type="text" id="topic" placeholder="e.g. drinks that impact bone density" onkeydown="if(event.key==='Enter')generate()" />
+      <button class="btn-main" id="genbtn" onclick="generate()">Generate</button>
     </div>
-    <button onclick="randomize()" style="margin-top:10px;background:#fff;color:#1a1a1a;border:1px solid #ddd;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">🎲 Random Topic</button>
-    <div id="err" class="err" style="display:none"></div>
+    <button class="btn-sec" id="randbtn" onclick="randomTopic()">🎲 Random Topic</button>
+    <div class="err" id="errmsg"></div>
   </div>
 
-  <!-- AD PREVIEW — always in DOM, shown after generate -->
-  <div id="ad-card" class="card" style="display:none">
-    <div style="display:flex;justify-content:center;">
-      <canvas id="ad-canvas" width="460" height="460" style="border-radius:8px;display:block;"></canvas>
-      <br>
-      <div style="display:flex;gap:8px;margin-top:4px;">
-        <button onclick="dlAd()" style="background:#fff;color:#1a1a1a;border:1px solid #ddd;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">Download PNG</button>
-        <button onclick="saveZip()" style="background:#1a1a1a;color:#fff;border:none;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">💾 Save Ad (ZIP)</button>
-      </div>
+  <div class="card" id="adcard" style="display:none;">
+    <div style="display:flex;justify-content:center;margin-bottom:20px;">
+      <canvas id="adcanvas" width="460" height="460" style="border-radius:8px;display:block;"></canvas>
     </div>
-
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="btn-sec" style="margin-top:0;" onclick="downloadPNG()">Download PNG</button>
+      <button onclick="saveZIP()" style="margin-top:0;background:#1a1a1a;color:#fff;border:none;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">💾 Save Ad (ZIP)</button>
+    </div>
     <hr>
-
     <div class="lbl">Creative Script</div>
-    <div class="val" id="out-script"></div>
+    <div class="val" id="outscript"></div>
     <div class="val" style="font-weight:600;margin-top:4px;">Learn More</div>
-    <button class="cbtn" onclick="cp('out-script',this)">Copy</button>
-
+    <button class="cbtn" onclick="cp('outscript',this)">Copy</button>
     <hr>
-
     <div class="lbl">Text</div>
-    <div class="val" id="out-text"></div>
-    <button class="cbtn" onclick="cp('out-text',this)">Copy</button>
-
+    <div class="val" id="outtext"></div>
+    <button class="cbtn" onclick="cp('outtext',this)">Copy</button>
     <hr>
-
     <div class="lbl">Headline</div>
-    <div class="val" id="out-headline"></div>
-    <button class="cbtn" onclick="cp('out-headline',this)">Copy</button>
-
+    <div class="val" id="outheadline"></div>
+    <button class="cbtn" onclick="cp('outheadline',this)">Copy</button>
     <br><br>
-    <button onclick="cpAll()" style="background:#fff;color:#1a1a1a;border:1px solid #ddd;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">Copy All</button>
+    <button class="btn-sec" style="margin-top:0;" onclick="cpAll()">Copy All</button>
   </div>
 </div>
 
 <script>
 var usedTopics = [];
 
-async function randomize() {
-  var btn = document.querySelector('[onclick="randomize()"]');
-  btn.textContent = '⏳ Generating...';
+async function randomTopic() {
+  var btn = document.getElementById('randbtn');
+  var err = document.getElementById('errmsg');
+  err.style.display = 'none';
   btn.disabled = true;
-
+  btn.textContent = '⏳ Loading...';
   try {
-    var res = await fetch('/api/random-topic', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ used: usedTopics }) });
-    var d = await res.json();
+    var r = await fetch('/api/random-topic', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({used: usedTopics})
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Server error');
     usedTopics.push(d.topic);
     document.getElementById('topic').value = d.topic;
-    await go();
+    await generate();
   } catch(e) {
-    // handled below
-  } finally {
-    btn.textContent = '🎲 Random Topic';
-    btn.disabled = false;
+    err.textContent = 'Error: ' + e.message;
+    err.style.display = 'block';
   }
+  btn.disabled = false;
+  btn.textContent = '🎲 Random Topic';
 }
 
-async async function go() {
+async function generate() {
   var topic = document.getElementById('topic').value.trim();
-  var err = document.getElementById('err');
+  var err = document.getElementById('errmsg');
   err.style.display = 'none';
   if (!topic) { err.textContent = 'Please enter a topic.'; err.style.display = 'block'; return; }
 
-  var btn = document.getElementById('btn');
+  var btn = document.getElementById('genbtn');
   btn.disabled = true;
   btn.textContent = 'Generating...';
 
   try {
-    var res = await fetch('/api/generate', {
+    var r = await fetch('/api/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic: topic })
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({topic: topic})
     });
-    var d = await res.json();
-    if (!res.ok) throw new Error(d.error || 'Server error');
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Server error');
 
-    // Build ad text with yellow highlight
-    var wU = d.white.toUpperCase();
-    var yU = d.yellow.toUpperCase();
-    document.getElementById('out-script').innerHTML =
-      wU + ' <span style="color:#b8860b;font-weight:600">' + yU + '</span>';
-    document.getElementById('out-text').textContent = d.text;
-    document.getElementById('out-headline').textContent = d.headline;
-    document.getElementById('ad-card').style.display = 'block';
-    drawAd(wU, yU);
+    var w = d.white.toUpperCase();
+    var y = d.yellow.toUpperCase();
+    drawCanvas(w, y);
+    document.getElementById('outscript').innerHTML = w + ' <span style="color:#b8860b;font-weight:600">' + y + '</span>';
+    document.getElementById('outtext').textContent = d.text;
+    document.getElementById('outheadline').textContent = d.headline;
+    document.getElementById('adcard').style.display = 'block';
   } catch(e) {
     err.textContent = 'Error: ' + e.message;
     err.style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Generate';
   }
+  btn.disabled = false;
+  btn.textContent = 'Generate';
 }
 
-function drawAd(white, yellow) {
-  var canvas = document.getElementById('ad-canvas');
-  var ctx = canvas.getContext('2d');
+function drawCanvas(white, yellow) {
+  var c = document.getElementById('adcanvas');
+  var ctx = c.getContext('2d');
   var W = 460, H = 460;
-  var fullText = white + ' ' + yellow;
-  var words = fullText.split(' ');
-  var yellowWords = yellow.split(' ');
-
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
 
-  ctx.font = '900 36px Impact, Arial Black, Arial';
-  ctx.textAlign = 'center';
+  var fontSize = 36;
+  ctx.font = '900 ' + fontSize + 'px Impact, Arial Black, Arial';
+  ctx.textAlign = 'left';
+
+  var allWords = (white + ' ' + yellow).split(' ');
+  var yellowWords = yellow.split(' ');
 
   // Word wrap
-  var lines = [], line = '';
-  for (var i = 0; i < words.length; i++) {
-    var test = line ? line + ' ' + words[i] : words[i];
-    if (ctx.measureText(test).width > 380 && line) { lines.push(line); line = words[i]; }
-    else line = test;
+  var lines = [], cur = '';
+  for (var i = 0; i < allWords.length; i++) {
+    var test = cur ? cur + ' ' + allWords[i] : allWords[i];
+    if (ctx.measureText(test).width > 400 && cur) { lines.push(cur); cur = allWords[i]; }
+    else cur = test;
   }
-  if (line) lines.push(line);
+  if (cur) lines.push(cur);
 
-  var lineH = 46;
-  var totalH = lines.length * lineH;
-  var startY = (H - totalH) / 2 - 20 + lineH;
+  var lh = fontSize + 12;
+  var totalH = lines.length * lh;
+  var startY = (H - totalH) / 2 + fontSize - 10;
 
-  // Draw each line word by word for coloring
   for (var l = 0; l < lines.length; l++) {
     var lineWords = lines[l].split(' ');
-    var lineWidth = ctx.measureText(lines[l]).width;
-    var x = (W - lineWidth) / 2;
-    var y = startY + l * lineH;
+    var lineW = ctx.measureText(lines[l] + ' '.repeat(lineWords.length - 1)).width;
+    // center by measuring full line
+    var fullW = ctx.measureText(lines[l]).width;
+    var x = (W - fullW) / 2;
+    var y = startY + l * lh;
     for (var w = 0; w < lineWords.length; w++) {
       var word = lineWords[w];
-      var isYellow = yellowWords.indexOf(word) >= 0;
-      ctx.fillStyle = isYellow ? '#FFE500' : '#ffffff';
-      ctx.fillText(word, x + ctx.measureText(word).width / 2, y);
+      ctx.fillStyle = yellowWords.indexOf(word) >= 0 ? '#FFE500' : '#ffffff';
+      ctx.fillText(word, x, y);
       x += ctx.measureText(word + ' ').width;
     }
   }
 
-  // LEARN MORE
   ctx.font = '700 22px Impact, Arial Black, Arial';
   ctx.fillStyle = '#ffffff';
-  ctx.letterSpacing = '3px';
+  ctx.textAlign = 'center';
   ctx.fillText('LEARN MORE', W / 2, H - 36);
 }
 
-async function saveZip() {
-  var canvas = document.getElementById('ad-canvas');
-  var script = document.getElementById('out-script').innerText;
-  var text = document.getElementById('out-text').innerText;
-  var headline = document.getElementById('out-headline').innerText;
-  var topic = document.getElementById('topic').value.trim();
-  var slug = topic.replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 40);
-  var date = new Date().toISOString().slice(0,10);
-  var folder = slug + '_' + date;
-
-  var txtContent = 'Topic: ' + topic + '\n\n'
-    + 'Creative Script:\n' + script + '\nLearn More\n\n'
-    + 'Text:\n' + text + '\n\n'
-    + 'Headline:\n' + headline;
-
-  var zip = new JSZip();
-  var imgData = canvas.toDataURL('image/png').split(',')[1];
-  zip.file(folder + '/ad.png', imgData, { base64: true });
-  zip.file(folder + '/copy.txt', txtContent);
-
-  var blob = await zip.generateAsync({ type: 'blob' });
+function downloadPNG() {
   var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = folder + '.zip';
+  a.download = 'ad.png';
+  a.href = document.getElementById('adcanvas').toDataURL('image/png');
   a.click();
 }
 
-function dlAd() {
-  var canvas = document.getElementById('ad-canvas');
+async function saveZIP() {
+  var topic = document.getElementById('topic').value.trim();
+  var slug = topic.replace(/[^a-z0-9]/gi,'_').toLowerCase().slice(0,40);
+  var date = new Date().toISOString().slice(0,10);
+  var script = document.getElementById('outscript').innerText;
+  var text = document.getElementById('outtext').innerText;
+  var headline = document.getElementById('outheadline').innerText;
+  var txt = 'Topic: ' + topic + '\n\nCreative Script:\n' + script + '\nLearn More\n\nText:\n' + text + '\n\nHeadline:\n' + headline;
+  var zip = new JSZip();
+  zip.file('ad.png', document.getElementById('adcanvas').toDataURL('image/png').split(',')[1], {base64:true});
+  zip.file('copy.txt', txt);
+  var blob = await zip.generateAsync({type:'blob'});
   var a = document.createElement('a');
-  a.download = 'ad.png';
-  a.href = canvas.toDataURL('image/png');
+  a.href = URL.createObjectURL(blob);
+  a.download = slug + '_' + date + '.zip';
   a.click();
 }
 
@@ -223,10 +209,10 @@ function cp(id, btn) {
 }
 
 function cpAll() {
-  var s = document.getElementById('out-script').innerText;
-  var t = document.getElementById('out-text').innerText;
-  var h = document.getElementById('out-headline').innerText;
-  navigator.clipboard.writeText('Creative Script:\n' + s + '\n\nText:\n' + t + '\n\nHeadline:\n' + h);
+  var s = document.getElementById('outscript').innerText;
+  var t = document.getElementById('outtext').innerText;
+  var h = document.getElementById('outheadline').innerText;
+  navigator.clipboard.writeText('Creative Script:\n' + s + '\nLearn More\n\nText:\n' + t + '\n\nHeadline:\n' + h);
 }
 </script>
 </body>
