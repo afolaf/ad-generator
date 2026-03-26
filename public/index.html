@@ -86,14 +86,16 @@ async function randomize() {
     var d = await res.json();
     usedTopics.push(d.topic);
     document.getElementById('topic').value = d.topic;
-    go();
+    await go();
   } catch(e) {
+    // handled below
+  } finally {
     btn.textContent = '🎲 Random Topic';
     btn.disabled = false;
   }
 }
 
-async function go() {
+async async function go() {
   var topic = document.getElementById('topic').value.trim();
   var err = document.getElementById('err');
   err.style.display = 'none';
