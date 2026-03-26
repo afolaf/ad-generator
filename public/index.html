@@ -33,6 +33,7 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
       <input type="text" id="topic" placeholder="e.g. drinks that impact bone density" onkeydown="if(event.key==='Enter')go()" />
       <button class="main" id="btn" onclick="go()">Generate</button>
     </div>
+    <button onclick="randomize()" style="margin-top:10px;background:#fff;color:#1a1a1a;border:1px solid #ddd;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">🎲 Random Topic</button>
     <div id="err" class="err" style="display:none"></div>
   </div>
 
@@ -69,6 +70,35 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
 </div>
 
 <script>
+var topics = [
+  'drinks that impact bone density',
+  'vegetables that improve your sleep',
+  'habits that slow down aging',
+  'foods that reduce inflammation',
+  'exercises that boost your mood',
+  'vitamins that improve your energy',
+  'foods that damage your liver',
+  'morning habits that sharpen your focus',
+  'spices that lower blood sugar',
+  'fruits that protect your heart',
+  'foods that destroy your gut health',
+  'stretches that relieve back pain',
+  'supplements that support joint health',
+  'habits that weaken your immune system',
+  'foods that improve your skin',
+  'drinks that damage your kidneys',
+  'nutrients that support eye health',
+  'foods that trigger anxiety',
+  'exercises that burn fat fast',
+  'herbs that reduce stress naturally'
+];
+
+function randomize() {
+  var t = topics[Math.floor(Math.random() * topics.length)];
+  document.getElementById('topic').value = t;
+  go();
+}
+
 async function go() {
   var topic = document.getElementById('topic').value.trim();
   var err = document.getElementById('err');
