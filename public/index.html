@@ -18,10 +18,24 @@
   .row input { flex: 1; }
   button { padding: 10px 20px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
   button:disabled { background: #aaa; cursor: not-allowed; }
-  .ad-preview { background: #cc0000; border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; }
-  .ad-label { color: rgba(255,255,255,0.7); font-size: 11px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase; }
-  .ad-script { color: #FFD700; font-size: 17px; font-weight: 700; line-height: 1.35; margin-bottom: 12px; }
-  .ad-cta { color: #fff; font-size: 13px; font-weight: 600; border: 1.5px solid rgba(255,255,255,0.6); display: inline-block; padding: 4px 14px; border-radius: 20px; }
+  .ad-wrap { display: flex; justify-content: center; margin-bottom: 24px; }
+  .ad-square {
+    background: #000; aspect-ratio: 1/1; width: 100%; max-width: 480px;
+    border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between; padding: 10% 8%;
+  }
+  .ad-text-main {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: clamp(20px, 5vw, 36px); font-weight: 900;
+    text-align: center; line-height: 1.15; text-transform: uppercase;
+    font-family: Impact, 'Arial Black', sans-serif;
+  }
+  .ad-yellow { color: #FFE500; }
+  .ad-cta {
+    color: #fff; font-size: clamp(14px, 3vw, 22px); font-weight: 700;
+    text-align: center; letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: Impact, 'Arial Black', sans-serif; padding-top: 8%;
+  }
   .output { display: none; margin-top: 1.5rem; }
   .field-label { font-size: 11px; font-weight: 600; color: #888; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
   .field-value { font-size: 14px; line-height: 1.6; }
@@ -39,12 +53,12 @@
 <body>
 <div class="container">
   <h1>Ad Generator</h1>
-  <p class="subtitle">Generate ad variations based on your approved template.</p>
+  <p class="subtitle">Generate square image ad variations based on your approved template.</p>
 
   <div class="card">
     <label>Topic / Onderwerp</label>
     <div class="row">
-      <input type="text" id="topic" placeholder="e.g. 3 vegetables that help you sleep better" onkeydown="if(event.key==='Enter')generate()" />
+      <input type="text" id="topic" placeholder="e.g. drinks that impact bone density" onkeydown="if(event.key==='Enter')generate()" />
       <button id="gen-btn" onclick="generate()">Generate</button>
     </div>
     <p class="error" id="error"></p>
@@ -52,11 +66,18 @@
 
     <div class="output" id="output">
       <hr>
-      <div class="ad-preview">
-        <div class="ad-label">Creative Script</div>
-        <div class="ad-script" id="out-script"></div>
-        <div class="ad-cta">Learn More</div>
+      <div class="ad-wrap">
+        <div class="ad-square">
+          <div class="ad-text-main" id="out-script-display"></div>
+          <div class="ad-cta">LEARN MORE</div>
+        </div>
       </div>
+      <div style="margin-bottom:16px">
+        <div class="field-label">Creative Script</div>
+        <div class="field-value" id="out-script"></div>
+        <button class="copy-btn" onclick="copy('out-script',this)">Copy</button>
+      </div>
+      <hr>
       <div style="margin-bottom:16px">
         <div class="field-label">Text</div>
         <div class="field-value" id="out-text"></div>
@@ -103,12 +124,17 @@ async function generate() {
     if (!res.ok) throw new Error((await res.json()).error || 'Server error');
     const d = await res.json();
 
-    document.getElementById('out-script').textContent = d.script;
+    // Ad preview
+    document.getElementById('out-script-display').innerHTML =
+      `${d.white} <span style="color:#FFE500">${d.yellow}</span>`;
+
+    document.getElementById('out-script').innerHTML =
+      `${d.white} <span style="color:#b8860b;font-weight:600">${d.yellow}</span>`;
     document.getElementById('out-text').textContent = d.text;
     document.getElementById('out-headline').textContent = d.headline;
     document.getElementById('output').style.display = 'block';
 
-    history.unshift({ topic, ...d, date: new Date().toLocaleTimeString() });
+    history.unshift({ topic, script: `${d.white} ${d.yellow}`, text: d.text, headline: d.headline, date: new Date().toLocaleTimeString() });
     renderHistory();
   } catch(e) {
     err.textContent = 'Error: ' + e.message; err.style.display = 'block';
@@ -119,14 +145,14 @@ async function generate() {
 }
 
 function copy(id, btn) {
-  navigator.clipboard.writeText(document.getElementById(id).textContent);
+  navigator.clipboard.writeText(document.getElementById(id).innerText);
   btn.textContent = '✓ Copied'; setTimeout(() => btn.textContent = 'Copy', 1500);
 }
 
 function copyAll() {
-  const s = document.getElementById('out-script').textContent;
-  const t = document.getElementById('out-text').textContent;
-  const h = document.getElementById('out-headline').textContent;
+  const s = document.getElementById('out-script').innerText;
+  const t = document.getElementById('out-text').innerText;
+  const h = document.getElementById('out-headline').innerText;
   navigator.clipboard.writeText(`Creative Script:\n${s}\n\nText:\n${t}\n\nHeadline:\n${h}`);
 }
 
