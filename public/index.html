@@ -73,7 +73,7 @@ hr { border: none; border-top: 1px solid #eee; margin: 1rem 0; }
 </div>
 
 <script>
-var history = [];
+var adHistory = [];
 
 function wrapWords(words, maxChars) {
   var lines = [], line = '';
@@ -163,7 +163,7 @@ async function generate() {
     document.getElementById('out-text').textContent = d.text;
     document.getElementById('out-headline').textContent = d.headline;
 
-    history.unshift({ topic: topic, script: d.white + ' ' + d.yellow, text: d.text, headline: d.headline, date: new Date().toLocaleTimeString() });
+    adHistory.unshift({ topic: topic, script: d.white + ' ' + d.yellow, text: d.text, headline: d.headline, date: new Date().toLocaleTimeString() });
     renderHistory();
   } catch(e) {
     err.textContent = 'Error: ' + e.message; err.style.display = 'block';
@@ -186,12 +186,12 @@ function copyAll() {
 }
 
 function renderHistory() {
-  if (history.length < 2) return;
+  if (adHistory.length < 2) return;
   document.getElementById('history-card').style.display = 'block';
-  document.getElementById('hcount').textContent = history.length;
+  document.getElementById('hcount').textContent = adHistory.length;
   var html = '';
-  for (var i = 0; i < history.length; i++) {
-    var e = history[i];
+  for (var i = 0; i < adHistory.length; i++) {
+    var e = adHistory[i];
     html += '<div style="border-top:1px solid #eee;padding:10px 0">'
       + '<div style="font-size:13px;font-weight:500">' + e.topic + '</div>'
       + '<div style="font-size:11px;color:#aaa">' + e.date + '</div>'
@@ -203,7 +203,7 @@ function renderHistory() {
 }
 
 function clearHistory() {
-  history = [];
+  adHistory = [];
   document.getElementById('history-card').style.display = 'none';
 }
 </script>
