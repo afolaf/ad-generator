@@ -76,15 +76,25 @@ app.post("/api/random-topic", async (req, res) => {
   }
 });
 
+const CATEGORY_CONTEXT = {
+  HEALTH: "This is a HEALTH ad. Focus on symptoms, conditions, vitamin deficiencies, medications, or medical information relevant to 65+ Americans.",
+  TRAVEL: "This is a TRAVEL ad. Focus on destinations, scenic routes, cruises, travel tips, or travel experiences relevant to 65+ Americans.",
+  VEHICLES: "This is a VEHICLES ad. Focus on car features, comparisons, buying considerations, or maintenance tips relevant to 65+ Americans. Make it clear it's an informative guide, not a dealership.",
+  COMMERCE: "This is a COMMERCE/SERVICES ad. Focus on services like Medicare supplements, home care, insurance, or home improvement relevant to 65+ Americans.",
+  FACTS: "This is a FACTS YOU DIDN'T KNOW ad. Focus on surprising, little-known, or counterintuitive facts about health, nature, history, or everyday life relevant to 65+ Americans."
+};
+
 app.post("/api/generate", async (req, res) => {
-  const { topic } = req.body;
+  const { topic, category = null } = req.body;
   if (!topic) return res.status(400).json({ error: "No topic provided" });
 
+  const categoryContext = category && CATEGORY_CONTEXT[category] ? "\n\nCATEGORY CONTEXT: " + CATEGORY_CONTEXT[category] : "";
   try {
     const msg = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 400,
-      system: SYSTEM_PROMPT,
+      system: SYSTEM_PROMPT + categoryContext,
+
       messages: [{ role: "user", content: topic }],
     });
 
