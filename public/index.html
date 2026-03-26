@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ad Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; padding: 2rem 1rem; }
@@ -42,7 +43,10 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
     <div style="display:flex;justify-content:center;">
       <canvas id="ad-canvas" width="460" height="460" style="border-radius:8px;display:block;"></canvas>
       <br>
-      <button onclick="dlAd()" style="background:#fff;color:#1a1a1a;border:1px solid #ddd;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">Download PNG</button>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button onclick="dlAd()" style="background:#fff;color:#1a1a1a;border:1px solid #ddd;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">Download PNG</button>
+        <button onclick="saveZip()" style="background:#1a1a1a;color:#fff;border:none;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">💾 Save Ad (ZIP)</button>
+      </div>
     </div>
 
     <hr>
@@ -188,6 +192,33 @@ function drawAd(white, yellow) {
   ctx.fillStyle = '#ffffff';
   ctx.letterSpacing = '3px';
   ctx.fillText('LEARN MORE', W / 2, H - 36);
+}
+
+async function saveZip() {
+  var canvas = document.getElementById('ad-canvas');
+  var script = document.getElementById('out-script').innerText;
+  var text = document.getElementById('out-text').innerText;
+  var headline = document.getElementById('out-headline').innerText;
+  var topic = document.getElementById('topic').value.trim();
+  var slug = topic.replace(/[^a-z0-9]/gi, '_').toLowerCase().slice(0, 40);
+  var date = new Date().toISOString().slice(0,10);
+  var folder = slug + '_' + date;
+
+  var txtContent = 'Topic: ' + topic + '\n\n'
+    + 'Creative Script:\n' + script + '\nLearn More\n\n'
+    + 'Text:\n' + text + '\n\n'
+    + 'Headline:\n' + headline;
+
+  var zip = new JSZip();
+  var imgData = canvas.toDataURL('image/png').split(',')[1];
+  zip.file(folder + '/ad.png', imgData, { base64: true });
+  zip.file(folder + '/copy.txt', txtContent);
+
+  var blob = await zip.generateAsync({ type: 'blob' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = folder + '.zip';
+  a.click();
 }
 
 function dlAd() {
