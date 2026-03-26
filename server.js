@@ -23,6 +23,40 @@ RULES:
 - Respond ONLY in this exact JSON (no markdown, no extra text):
 {"white":"THESE 3 COMMON DRINKS MAY BE IMPACTING","yellow":"BONE DENSITY","text":"...","headline":"..."}`;
 
+const RANDOM_TOPIC_PROMPT = `You generate creative ad topics about health, aging, nutrition, medical symptoms, or lifestyle. 
+
+Generate ONE unique topic inspired by these proven formats:
+- "what vitamin deficiency might cause [symptom]"
+- "[number] mistakes people make when [health action]"  
+- "what happens when you [health action]"
+- "signs you might have [condition]"
+- "what [specialist] may want you to know about [topic]"
+- "is it safe to [health action]"
+- "everyday [foods/habits/drinks] that might [effect]"
+- "how [cause] might be affecting your [health outcome]"
+
+Rules:
+- Always health/medical/lifestyle related
+- Must be something a 50+ year old would find interesting
+- Never repeat a topic from the list provided
+- Return ONLY the topic as plain text, nothing else, no quotes`;
+
+app.post("/api/random-topic", async (req, res) => {
+  const { used = [] } = req.body;
+  const usedList = used.length > 0 ? "\n\nTopics already used (DO NOT repeat these):\n" + used.join("\n") : "";
+  try {
+    const msg = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 60,
+      system: RANDOM_TOPIC_PROMPT + usedList,
+      messages: [{ role: "user", content: "Generate a new unique topic." }],
+    });
+    res.json({ topic: msg.content[0].text.trim() });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post("/api/generate", async (req, res) => {
   const { topic } = req.body;
   if (!topic) return res.status(400).json({ error: "No topic provided" });
