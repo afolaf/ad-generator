@@ -19,24 +19,6 @@
   button { padding: 10px 20px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
   button:disabled { background: #aaa; cursor: not-allowed; }
   .ad-wrap { display: flex; justify-content: center; margin-bottom: 24px; }
-  .ad-square {
-    background: #000; width: 440px; height: 440px; border-radius: 8px;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: space-between;
-    padding: 44px 36px;
-  }
-  .ad-text-main {
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 30px; font-weight: 900;
-    text-align: center; line-height: 1.15; text-transform: uppercase;
-    font-family: Impact, 'Arial Black', sans-serif;
-  }
-  .ad-yellow { color: #FFE500; }
-  .ad-cta {
-    color: #fff; font-size: 20px; font-weight: 700;
-    text-align: center; letter-spacing: 0.08em; text-transform: uppercase;
-    font-family: Impact, 'Arial Black', sans-serif;
-  }
   .output { display: none; margin-top: 1.5rem; }
   .field-label { font-size: 11px; font-weight: 600; color: #888; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
   .field-value { font-size: 14px; line-height: 1.6; }
@@ -68,10 +50,7 @@
     <div class="output" id="output">
       <hr>
       <div class="ad-wrap">
-        <div class="ad-square">
-          <div class="ad-text-main" id="out-script-display"></div>
-          <div class="ad-cta">LEARN MORE</div>
-        </div>
+        <div id="ad-svg-container"></div>
       </div>
       <div style="margin-bottom:16px">
         <div class="field-label">Creative Script</div>
@@ -125,8 +104,7 @@ async function generate() {
     if (!res.ok) throw new Error((await res.json()).error || 'Server error');
     const d = await res.json();
 
-    document.getElementById('out-script-display').innerHTML =
-      `${d.white} <span class="ad-yellow">${d.yellow}</span>`;
+    renderAdSVG(d.white, d.yellow);
     document.getElementById('out-script').innerHTML =
       `${d.white} <span style="color:#b8860b;font-weight:600">${d.yellow}</span>`;
     document.getElementById('out-text').textContent = d.text;
@@ -141,6 +119,45 @@ async function generate() {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('gen-btn').disabled = false;
   }
+}
+
+function wrapText(words, maxChars) {
+  const lines = []; let line = '';
+  for (const w of words) {
+    if ((line + ' ' + w).trim().length > maxChars) { lines.push(line.trim()); line = w; }
+    else line = (line + ' ' + w).trim();
+  }
+  if (line) lines.push(line.trim());
+  return lines;
+}
+
+function renderAdSVG(white, yellow) {
+  const size = 440;
+  const allWords = (white + ' ' + yellow).toUpperCase().split(' ');
+  const yellowWords = yellow.toUpperCase().split(' ');
+  const whiteWords = white.toUpperCase().split(' ');
+  const lines = wrapText(allWords, 18);
+  const fontSize = 38;
+  const lineH = 46;
+  const totalTextH = lines.length * lineH;
+  const startY = (size - totalTextH - 60) / 2 + lineH;
+
+  const textEls = lines.map((line, i) => {
+    const y = startY + i * lineH;
+    const wordsInLine = line.split(' ');
+    const spans = wordsInLine.map(w => {
+      const isYellow = yellowWords.includes(w);
+      return `<tspan fill="${isYellow ? '#FFE500' : '#ffffff'}">${w} </tspan>`;
+    }).join('');
+    return `<text x="220" y="${y}" text-anchor="middle" font-family="Impact,'Arial Black',sans-serif" font-size="${fontSize}" font-weight="900">${spans}</text>`;
+  }).join('');
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" style="border-radius:8px;display:block;">
+    <rect width="${size}" height="${size}" fill="#000"/>
+    ${textEls}
+    <text x="220" y="${size - 36}" text-anchor="middle" font-family="Impact,'Arial Black',sans-serif" font-size="24" font-weight="700" fill="#ffffff" letter-spacing="3">LEARN MORE</text>
+  </svg>`;
+  document.getElementById('ad-svg-container').innerHTML = svg;
 }
 
 function copyEl(id, btn) {
