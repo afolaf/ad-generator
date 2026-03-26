@@ -23,11 +23,28 @@ RULES:
 - Respond ONLY in this exact JSON (no markdown, no extra text):
 {"white":"THESE 3 COMMON DRINKS MAY BE IMPACTING","yellow":"BONE DENSITY","text":"...","headline":"..."}`;
 
-const RANDOM_TOPIC_PROMPT = `You generate creative ad topics about health, aging, nutrition, medical symptoms, or lifestyle. 
+const CATEGORY_PROMPTS = {
+  HEALTH: `Generate ONE informative health topic for a 65+ USA audience. Focus on: vitamin deficiencies, medication side effects, symptoms to watch for, treatment options, what doctors may recommend, common health mistakes, age-related conditions (joint pain, bone density, memory, heart health, diabetes, sleep, vision, hearing). 
+  Format examples: "what vitamin deficiency might cause [symptom]", "[number] mistakes people make when [managing condition]", "what happens when you [health action]", "signs you might have [condition]", "what [specialist] may want you to know about [topic]", "is it safe to [health action]"`,
+
+  TRAVEL: `Generate ONE informative travel topic for a 65+ USA audience. Focus on: scenic routes in the USA, cruises, national parks, travel tips for seniors, affordable destinations, road trips, travel considerations, packing tips, travel insurance info, accessible travel. 
+  Format examples: "what to know before [travel action]", "[number] things people overlook when [travel planning]", "what most people don't know about [destination/travel type]", "how [travel type] might be more [benefit] than you think", "signs you might love [destination]"`,
+
+  VEHICLES: `Generate ONE informative vehicle topic for a 65+ USA audience. Focus on: car safety features, hybrid vs gas, what to check before buying a used car, maintenance tips, best cars for seniors, fuel efficiency, vehicle comparisons, things to consider when buying a car. 
+  Format examples: "what to know before buying a [vehicle type]", "[number] things people overlook when [car action]", "what might make [vehicle feature] worth considering", "how [car feature] might affect your [driving experience/safety]", "signs it might be time to [vehicle action]"`,
+
+  COMMERCE: `Generate ONE informative commerce/services topic for a 65+ USA audience. Focus on: Medicare supplement plans, home security, senior living options, home improvement services, subscription services, internet plans, utility savings, insurance options, online shopping safety, home care services.
+  Format examples: "what most people don't know about [service]", "[number] things to consider when choosing [service]", "what might make [service/product] worth looking into", "signs you might benefit from [service]", "what to know before signing up for [service]"`,
+
+  FACTS: `Generate ONE surprising/interesting fact topic for a 65+ USA audience. Focus on: surprising health facts, historical facts about the USA, nature and science facts, food and nutrition facts, little-known facts about everyday things, surprising facts about aging, body and brain facts.
+  Format examples: "what most people don't know about [topic]", "the surprising truth about [topic]", "what science may say about [topic]", "[number] surprising facts about [topic] most people don't know", "how [topic] might be different from what you think"`
+};
+
+const RANDOM_TOPIC_PROMPT = `You generate creative ad topics about health, aging, nutrition, medical symptoms, or lifestyle for a 65+ USA audience.
 
 Generate ONE unique topic inspired by these proven formats:
 - "what vitamin deficiency might cause [symptom]"
-- "[number] mistakes people make when [health action]"  
+- "[number] mistakes people make when [health action]"
 - "what happens when you [health action]"
 - "signs you might have [condition]"
 - "what [specialist] may want you to know about [topic]"
@@ -37,18 +54,20 @@ Generate ONE unique topic inspired by these proven formats:
 
 Rules:
 - Always health/medical/lifestyle related
-- Must be something a 50+ year old would find interesting
+- Must be something a 65+ year old in the USA would find interesting
 - Never repeat a topic from the list provided
 - Return ONLY the topic as plain text, nothing else, no quotes`;
 
 app.post("/api/random-topic", async (req, res) => {
-  const { used = [] } = req.body;
+  const { used = [], category = null } = req.body;
   const usedList = used.length > 0 ? "\n\nTopics already used (DO NOT repeat these):\n" + used.join("\n") : "";
+  const basePrompt = category && CATEGORY_PROMPTS[category] ? CATEGORY_PROMPTS[category] : RANDOM_TOPIC_PROMPT;
+  const fullPrompt = basePrompt + usedList + "\n\nRules:\n- Never repeat a topic from the used list\n- Return ONLY the topic as plain text, nothing else, no quotes";
   try {
     const msg = await client.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 60,
-      system: RANDOM_TOPIC_PROMPT + usedList,
+      max_tokens: 80,
+      system: fullPrompt,
       messages: [{ role: "user", content: "Generate a new unique topic." }],
     });
     res.json({ topic: msg.content[0].text.trim() });
