@@ -155,49 +155,48 @@ function drawCanvas(white, yellow) {
   var W = 460, H = 460;
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
+  ctx.textBaseline = 'alphabetic';
 
   var fontSize = 38;
-  var font = '900 ' + fontSize + 'px Impact, Arial Black, Arial';
-  ctx.font = font;
+  ctx.font = '900 ' + fontSize + 'px Impact, Arial Black, Arial';
 
-  var allWords = (white + ' ' + yellow).split(' ');
+  var spaceW = ctx.measureText(' ').width;
+  var allWords = (white + ' ' + yellow).split(' ').filter(function(w){ return w.length > 0; });
   var yellowSet = {};
-  yellow.split(' ').forEach(function(w){ yellowSet[w] = true; });
+  yellow.split(' ').filter(function(w){ return w.length > 0; }).forEach(function(w){ yellowSet[w] = true; });
 
-  // Word wrap into lines
-  var lines = [], cur = [];
+  // Word wrap
+  var lines = [[]];
   for (var i = 0; i < allWords.length; i++) {
-    cur.push(allWords[i]);
-    var testLine = cur.join(' ');
-    if (ctx.measureText(testLine).width > 400 && cur.length > 1) {
-      cur.pop();
-      lines.push(cur.slice());
-      cur = [allWords[i]];
+    var testLine = lines[lines.length-1].concat([allWords[i]]).join(' ');
+    if (lines[lines.length-1].length > 0 && ctx.measureText(testLine).width > 410) {
+      lines.push([allWords[i]]);
+    } else {
+      lines[lines.length-1].push(allWords[i]);
     }
   }
-  if (cur.length) lines.push(cur);
 
   var lh = fontSize + 14;
   var totalH = lines.length * lh;
-  var startY = Math.round((H - totalH - 60) / 2) + fontSize;
-
-  ctx.textBaseline = 'alphabetic';
+  var startY = Math.round((H - totalH - 50) / 2) + fontSize;
 
   for (var l = 0; l < lines.length; l++) {
     var lineWords = lines[l];
-    var lineText = lineWords.join(' ');
-    var lineWidth = ctx.measureText(lineText).width;
-    var startX = Math.round((W - lineWidth) / 2);
+    // Calculate total line width
+    var lineW = 0;
+    for (var w = 0; w < lineWords.length; w++) {
+      lineW += ctx.measureText(lineWords[w]).width;
+      if (w < lineWords.length - 1) lineW += spaceW;
+    }
+    var x = Math.round((W - lineW) / 2);
     var y = startY + l * lh;
-    var x = startX;
 
     for (var w = 0; w < lineWords.length; w++) {
       var word = lineWords[w];
       ctx.fillStyle = yellowSet[word] ? '#FFE500' : '#ffffff';
       ctx.fillText(word, x, y);
-      // Use space width for gap between words
-      var gap = w < lineWords.length - 1 ? ctx.measureText(word + ' ').width : ctx.measureText(word).width;
-      x += gap;
+      x += ctx.measureText(word).width;
+      if (w < lineWords.length - 1) x += spaceW;
     }
   }
 
