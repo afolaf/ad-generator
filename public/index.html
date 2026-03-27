@@ -157,50 +157,64 @@ function drawCanvas(white, yellow) {
   ctx.fillRect(0, 0, W, H);
   ctx.textBaseline = 'alphabetic';
 
-  var fontSize = 38;
-  ctx.font = '900 ' + fontSize + 'px Impact, Arial Black, Arial';
-
-  var spaceW = ctx.measureText(' ').width;
   var allWords = (white + ' ' + yellow).split(' ').filter(function(w){ return w.length > 0; });
   var yellowSet = {};
   yellow.split(' ').filter(function(w){ return w.length > 0; }).forEach(function(w){ yellowSet[w] = true; });
 
-  // Word wrap
-  var lines = [[]];
-  for (var i = 0; i < allWords.length; i++) {
-    var testLine = lines[lines.length-1].concat([allWords[i]]).join(' ');
-    if (lines[lines.length-1].length > 0 && ctx.measureText(testLine).width > 410) {
-      lines.push([allWords[i]]);
-    } else {
-      lines[lines.length-1].push(allWords[i]);
+  // Find font size that fits — start big, shrink until it fits in ~5 lines
+  var fontSize = 42;
+  var maxW = 400;
+  var lines;
+
+  function buildLines(fs) {
+    ctx.font = '900 ' + fs + 'px Impact, Arial Black, Arial';
+    var ls = [[]];
+    for (var i = 0; i < allWords.length; i++) {
+      var test = ls[ls.length-1].concat([allWords[i]]).join(' ');
+      if (ls[ls.length-1].length > 0 && ctx.measureText(test).width > maxW) {
+        ls.push([allWords[i]]);
+      } else {
+        ls[ls.length-1].push(allWords[i]);
+      }
     }
+    return ls;
   }
 
-  var lh = fontSize + 14;
+  while (fontSize > 20) {
+    lines = buildLines(fontSize);
+    if (lines.length <= 5) break;
+    fontSize -= 3;
+  }
+  lines = buildLines(fontSize);
+  ctx.font = '900 ' + fontSize + 'px Impact, Arial Black, Arial';
+
+  var lh = Math.round(fontSize * 1.35);
   var totalH = lines.length * lh;
   var startY = Math.round((H - totalH - 50) / 2) + fontSize;
 
   for (var l = 0; l < lines.length; l++) {
     var lineWords = lines[l];
-    // Calculate total line width
-    var lineW = 0;
-    for (var w = 0; w < lineWords.length; w++) {
-      lineW += ctx.measureText(lineWords[w]).width;
-      if (w < lineWords.length - 1) lineW += spaceW;
-    }
-    var x = Math.round((W - lineW) / 2);
+    var lineText = lineWords.join(' ');
+    var lineW = ctx.measureText(lineText).width;
+    var originX = Math.round((W - lineW) / 2);
     var y = startY + l * lh;
 
+    // Draw full line white
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(lineText, originX, y);
+
+    // Overdraw yellow words using exact prefix measurement
     for (var w = 0; w < lineWords.length; w++) {
-      var word = lineWords[w];
-      ctx.fillStyle = yellowSet[word] ? '#FFE500' : '#ffffff';
-      ctx.fillText(word, x, y);
-      x += ctx.measureText(word).width;
-      if (w < lineWords.length - 1) x += spaceW;
+      if (yellowSet[lineWords[w]]) {
+        var prefix = lineWords.slice(0, w).join(' ');
+        var offsetX = prefix.length > 0 ? ctx.measureText(prefix + ' ').width : 0;
+        ctx.fillStyle = '#FFE500';
+        ctx.fillText(lineWords[w], originX + offsetX, y);
+      }
     }
   }
 
-  ctx.font = 'bold 20px Impact, Arial Black, Arial';
+  ctx.font = '900 20px Impact, Arial Black, Arial';
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.fillText('LEARN MORE', W / 2, H - 40);
