@@ -156,6 +156,7 @@ function drawCanvas(white, yellow) {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
   ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
 
   var allWords = (white + ' ' + yellow).split(' ').filter(function(w){ return w.length > 0; });
   var yellowSet = {};
