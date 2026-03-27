@@ -156,41 +156,55 @@ function drawCanvas(white, yellow) {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
 
-  var fontSize = 36;
-  ctx.font = '900 ' + fontSize + 'px Impact, Arial Black, Arial';
+  var fontSize = 38;
+  var font = '900 ' + fontSize + 'px Impact, Arial Black, Arial';
+  ctx.font = font;
 
   var allWords = (white + ' ' + yellow).split(' ');
-  var yellowWords = yellow.split(' ');
+  var yellowSet = {};
+  yellow.split(' ').forEach(function(w){ yellowSet[w] = true; });
 
-  var lines = [], cur = '';
+  // Word wrap into lines
+  var lines = [], cur = [];
   for (var i = 0; i < allWords.length; i++) {
-    var test = cur ? cur + ' ' + allWords[i] : allWords[i];
-    if (ctx.measureText(test).width > 400 && cur) { lines.push(cur); cur = allWords[i]; }
-    else cur = test;
+    cur.push(allWords[i]);
+    var testLine = cur.join(' ');
+    if (ctx.measureText(testLine).width > 400 && cur.length > 1) {
+      cur.pop();
+      lines.push(cur.slice());
+      cur = [allWords[i]];
+    }
   }
-  if (cur) lines.push(cur);
+  if (cur.length) lines.push(cur);
 
-  var lh = fontSize + 12;
+  var lh = fontSize + 14;
   var totalH = lines.length * lh;
-  var startY = (H - totalH) / 2 + fontSize - 10;
+  var startY = Math.round((H - totalH - 60) / 2) + fontSize;
+
+  ctx.textBaseline = 'alphabetic';
 
   for (var l = 0; l < lines.length; l++) {
-    var lineWords = lines[l].split(' ');
-    var fullW = ctx.measureText(lines[l]).width;
-    var x = (W - fullW) / 2;
+    var lineWords = lines[l];
+    var lineText = lineWords.join(' ');
+    var lineWidth = ctx.measureText(lineText).width;
+    var startX = Math.round((W - lineWidth) / 2);
     var y = startY + l * lh;
+    var x = startX;
+
     for (var w = 0; w < lineWords.length; w++) {
       var word = lineWords[w];
-      ctx.fillStyle = yellowWords.indexOf(word) >= 0 ? '#FFE500' : '#ffffff';
+      ctx.fillStyle = yellowSet[word] ? '#FFE500' : '#ffffff';
       ctx.fillText(word, x, y);
-      x += ctx.measureText(word + ' ').width;
+      // Use space width for gap between words
+      var gap = w < lineWords.length - 1 ? ctx.measureText(word + ' ').width : ctx.measureText(word).width;
+      x += gap;
     }
   }
 
-  ctx.font = '700 22px Impact, Arial Black, Arial';
+  ctx.font = 'bold 20px Impact, Arial Black, Arial';
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
-  ctx.fillText('LEARN MORE', W / 2, H - 36);
+  ctx.fillText('LEARN MORE', W / 2, H - 40);
 }
 
 function downloadPNG() {
