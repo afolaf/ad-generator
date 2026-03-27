@@ -17,10 +17,11 @@ input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; bo
 .row input { flex: 1; }
 .btn-main { padding: 10px 20px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
 .btn-main:disabled { background: #aaa; cursor: not-allowed; }
-.cat-btn { background:#fff; color:#1a1a1a; border:1px solid #ddd; font-size:13px; padding:7px 14px; border-radius:8px; cursor:pointer; }
-.cat-btn:hover { background:#f0f0f0; }
-.cat-btn:disabled { opacity:0.5; cursor:not-allowed; }
+.btn-sec { background: #fff; color: #1a1a1a; border: 1px solid #ddd; font-size: 13px; padding: 7px 14px; border-radius: 8px; cursor: pointer; }
 .btn-sec:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-cat { background: #fff; color: #1a1a1a; border: 1px solid #ddd; font-size: 13px; padding: 7px 14px; border-radius: 8px; cursor: pointer; }
+.btn-cat:hover { background: #f0f0f0; }
+.btn-cat:disabled { opacity: 0.5; cursor: not-allowed; }
 .lbl { font-size: 11px; font-weight: 600; color: #888; letter-spacing: 0.5px; text-transform: uppercase; margin: 16px 0 6px; }
 .val { font-size: 14px; line-height: 1.6; color: #1a1a1a; }
 .cbtn { font-size: 11px; padding: 3px 10px; background: #fff; color: #555; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; margin-top: 6px; }
@@ -39,13 +40,13 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
       <input type="text" id="topic" placeholder="e.g. drinks that impact bone density" onkeydown="if(event.key==='Enter')generate()" />
       <button class="btn-main" id="genbtn" onclick="generate()">Generate</button>
     </div>
-    <button class="btn-sec" id="randbtn" onclick="randomTopic(null)">🎲 Random Topic</button>
     <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;">
-      <button class="cat-btn" onclick="randomTopic('HEALTH')">🏥 Health</button>
-      <button class="cat-btn" onclick="randomTopic('TRAVEL')">✈️ Travel</button>
-      <button class="cat-btn" onclick="randomTopic('VEHICLES')">🚗 Vehicles</button>
-      <button class="cat-btn" onclick="randomTopic('COMMERCE')">🛍️ Commerce</button>
-      <button class="cat-btn" onclick="randomTopic('FACTS')">💡 Facts You Didn't Know</button>
+      <button class="btn-sec" id="randbtn" onclick="doRandom(null)">🎲 Random Topic</button>
+      <button class="btn-cat" id="catHEALTH" onclick="doRandom('HEALTH')">🏥 Health</button>
+      <button class="btn-cat" id="catTRAVEL" onclick="doRandom('TRAVEL')">✈️ Travel</button>
+      <button class="btn-cat" id="catVEHICLES" onclick="doRandom('VEHICLES')">🚗 Vehicles</button>
+      <button class="btn-cat" id="catCOMMERCE" onclick="doRandom('COMMERCE')">🛍️ Commerce</button>
+      <button class="btn-cat" id="catFACTS" onclick="doRandom('FACTS')">💡 Facts You Didn't Know</button>
     </div>
     <div class="err" id="errmsg"></div>
   </div>
@@ -55,8 +56,8 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
       <canvas id="adcanvas" width="460" height="460" style="border-radius:8px;display:block;"></canvas>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <button class="btn-sec" style="margin-top:0;" onclick="downloadPNG()">Download PNG</button>
-      <button onclick="saveZIP()" style="margin-top:0;background:#1a1a1a;color:#fff;border:none;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">💾 Save Ad (ZIP)</button>
+      <button class="btn-sec" onclick="downloadPNG()">Download PNG</button>
+      <button onclick="saveZIP()" style="background:#1a1a1a;color:#fff;border:none;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">💾 Save Ad (ZIP)</button>
     </div>
     <hr>
     <div class="lbl">Creative Script</div>
@@ -72,27 +73,37 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
     <div class="val" id="outheadline"></div>
     <button class="cbtn" onclick="cp('outheadline',this)">Copy</button>
     <br><br>
-    <button class="btn-sec" style="margin-top:0;" onclick="cpAll()">Copy All</button>
+    <button class="btn-sec" onclick="cpAll()">Copy All</button>
   </div>
 </div>
 
 <script>
 var usedTopics = [];
+var activeCategory = null;
 
-async function randomTopic() {
-  var btn = document.getElementById('randbtn');
+function setAllBtns(disabled) {
+  var btns = document.querySelectorAll('.btn-cat, #randbtn, #genbtn');
+  btns.forEach(function(b) { b.disabled = disabled; });
+}
+
+async function doRandom(cat) {
+  activeCategory = cat;
+  var btnId = cat ? 'cat' + cat : 'randbtn';
+  var btn = document.getElementById(btnId);
   var err = document.getElementById('errmsg');
   err.style.display = 'none';
-  btn.disabled = true;
+  var orig = btn.textContent;
+  setAllBtns(true);
   btn.textContent = '⏳ Loading...';
   try {
     var r = await fetch('/api/random-topic', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({used: usedTopics})
+      body: JSON.stringify({used: usedTopics, category: cat})
     });
+    if (!r.ok) throw new Error('Server error ' + r.status);
     var d = await r.json();
-    if (!r.ok) throw new Error(d.error || 'Server error');
+    if (!d.topic) throw new Error('No topic returned');
     usedTopics.push(d.topic);
     document.getElementById('topic').value = d.topic;
     await generate();
@@ -100,8 +111,8 @@ async function randomTopic() {
     err.textContent = 'Error: ' + e.message;
     err.style.display = 'block';
   }
-  btn.disabled = false;
-  btn.textContent = '🎲 Random Topic';
+  btn.textContent = orig;
+  setAllBtns(false);
 }
 
 async function generate() {
@@ -110,18 +121,15 @@ async function generate() {
   err.style.display = 'none';
   if (!topic) { err.textContent = 'Please enter a topic.'; err.style.display = 'block'; return; }
 
-  // If user typed manually (not via category button), reset category
-  if (!currentCategory) currentCategory = null;
-
-  var btn = document.getElementById('genbtn');
-  btn.disabled = true;
-  btn.textContent = 'Generating...';
+  var genbtn = document.getElementById('genbtn');
+  genbtn.disabled = true;
+  genbtn.textContent = 'Generating...';
 
   try {
     var r = await fetch('/api/generate', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({topic: topic, category: currentCategory})
+      body: JSON.stringify({topic: topic, category: activeCategory})
     });
     var d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Server error');
@@ -137,8 +145,8 @@ async function generate() {
     err.textContent = 'Error: ' + e.message;
     err.style.display = 'block';
   }
-  btn.disabled = false;
-  btn.textContent = 'Generate';
+  genbtn.disabled = false;
+  genbtn.textContent = 'Generate';
 }
 
 function drawCanvas(white, yellow) {
@@ -150,12 +158,10 @@ function drawCanvas(white, yellow) {
 
   var fontSize = 36;
   ctx.font = '900 ' + fontSize + 'px Impact, Arial Black, Arial';
-  ctx.textAlign = 'left';
 
   var allWords = (white + ' ' + yellow).split(' ');
   var yellowWords = yellow.split(' ');
 
-  // Word wrap
   var lines = [], cur = '';
   for (var i = 0; i < allWords.length; i++) {
     var test = cur ? cur + ' ' + allWords[i] : allWords[i];
@@ -170,8 +176,6 @@ function drawCanvas(white, yellow) {
 
   for (var l = 0; l < lines.length; l++) {
     var lineWords = lines[l].split(' ');
-    var lineW = ctx.measureText(lines[l] + ' '.repeat(lineWords.length - 1)).width;
-    // center by measuring full line
     var fullW = ctx.measureText(lines[l]).width;
     var x = (W - fullW) / 2;
     var y = startY + l * lh;
