@@ -18,10 +18,9 @@ input[type="text"] { width: 100%; padding: 10px 14px; border: 1px solid #ddd; bo
 .btn-main { padding: 10px 20px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
 .btn-main:disabled { background: #aaa; cursor: not-allowed; }
 .btn-sec { background: #fff; color: #1a1a1a; border: 1px solid #ddd; font-size: 13px; padding: 7px 14px; border-radius: 8px; cursor: pointer; }
-.btn-sec:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-cat { background: #fff; color: #1a1a1a; border: 1px solid #ddd; font-size: 13px; padding: 7px 14px; border-radius: 8px; cursor: pointer; }
 .btn-cat:hover { background: #f0f0f0; }
-.btn-cat:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-cat:disabled, .btn-sec:disabled { opacity: 0.5; cursor: not-allowed; }
 .lbl { font-size: 11px; font-weight: 600; color: #888; letter-spacing: 0.5px; text-transform: uppercase; margin: 16px 0 6px; }
 .val { font-size: 14px; line-height: 1.6; color: #1a1a1a; }
 .cbtn { font-size: 11px; padding: 3px 10px; background: #fff; color: #555; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; margin-top: 6px; }
@@ -54,14 +53,12 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
   <div class="card" id="adcard" style="display:none;">
     <div style="display:flex;justify-content:center;margin-bottom:20px;">
       <canvas id="adcanvas" width="460" height="460" style="border-radius:8px;display:block;"></canvas>
-    <canvas id="adcanvas-hd" width="1080" height="1080" style="display:none;"></canvas>
+      <canvas id="adcanvas-hd" width="1080" height="1080" style="display:none;"></canvas>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <button class="btn-sec" onclick="downloadPNG()">Download PNG</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+      <button class="btn-sec" onclick="downloadPNG()">⬇️ Download PNG (1080×1080)</button>
       <button onclick="saveZIP()" style="background:#1a1a1a;color:#fff;border:none;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">💾 Save Ad (ZIP)</button>
-      <button id="sheetbtn" onclick="pushToSheet()" style="background:#0f9d58;color:#fff;border:none;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">📊 Push to Sheet</button>
     </div>
-    <div id="sheetstatus" style="font-size:13px;margin-bottom:8px;display:none;"></div>
     <hr>
     <div class="lbl">Creative Script</div>
     <div class="val" id="outscript"></div>
@@ -85,8 +82,7 @@ var usedTopics = [];
 var activeCategory = null;
 
 function setAllBtns(disabled) {
-  var btns = document.querySelectorAll('.btn-cat, #randbtn, #genbtn');
-  btns.forEach(function(b) { b.disabled = disabled; });
+  document.querySelectorAll('.btn-cat, #randbtn, #genbtn').forEach(function(b){ b.disabled = disabled; });
 }
 
 async function doRandom(cat) {
@@ -137,10 +133,12 @@ async function generate() {
     var d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Server error');
 
-    var wh = d.white.toUpperCase();
-    var ye = d.yellow.toUpperCase();
+    var wh = String(d.white || '').toUpperCase();
+    var ye = String(d.yellow || '').toUpperCase();
+
     drawCanvas('adcanvas', 460, wh, ye);
     drawCanvas('adcanvas-hd', 1080, wh, ye);
+
     document.getElementById('outscript').innerHTML = wh + ' <span style="color:#b8860b;font-weight:600">' + ye + '</span>';
     document.getElementById('outtext').textContent = d.text;
     document.getElementById('outheadline').textContent = d.headline;
@@ -153,10 +151,15 @@ async function generate() {
   genbtn.textContent = 'Generate';
 }
 
-function drawCanvas(white, yellow) {
-  var c = document.getElementById('adcanvas');
+function drawCanvas(canvasId, size, white, yellow) {
+  white = String(white || '');
+  yellow = String(yellow || '');
+
+  var c = document.getElementById(canvasId);
   var ctx = c.getContext('2d');
-  var W = 460, H = 460;
+  var W = size, H = size;
+  var scale = size / 460;
+
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
   ctx.textBaseline = 'alphabetic';
@@ -166,17 +169,15 @@ function drawCanvas(white, yellow) {
   var yellowSet = {};
   yellow.split(' ').filter(function(w){ return w.length > 0; }).forEach(function(w){ yellowSet[w] = true; });
 
-  // Find font size that fits — start big, shrink until it fits in ~5 lines
-  var fontSize = 42;
-  var maxW = 400;
-  var lines;
+  var fontSize = Math.round(42 * scale);
+  var maxLineW = Math.round(400 * scale);
 
   function buildLines(fs) {
     ctx.font = '900 ' + fs + 'px Impact, Arial Black, Arial';
     var ls = [[]];
     for (var i = 0; i < allWords.length; i++) {
       var test = ls[ls.length-1].concat([allWords[i]]).join(' ');
-      if (ls[ls.length-1].length > 0 && ctx.measureText(test).width > maxW) {
+      if (ls[ls.length-1].length > 0 && ctx.measureText(test).width > maxLineW) {
         ls.push([allWords[i]]);
       } else {
         ls[ls.length-1].push(allWords[i]);
@@ -185,88 +186,45 @@ function drawCanvas(white, yellow) {
     return ls;
   }
 
-  while (fontSize > 20) {
+  var lines;
+  while (fontSize > Math.round(18 * scale)) {
     lines = buildLines(fontSize);
     if (lines.length <= 5) break;
-    fontSize -= 3;
+    fontSize -= Math.round(3 * scale);
   }
   lines = buildLines(fontSize);
   ctx.font = '900 ' + fontSize + 'px Impact, Arial Black, Arial';
 
   var lh = Math.round(fontSize * 1.35);
   var totalH = lines.length * lh;
-  var startY = Math.round((H - totalH - 50) / 2) + fontSize;
+  var startY = Math.round((H - totalH - 50 * scale) / 2) + fontSize;
 
-  for (var l = 0; l < lines.length; l++) {
-    var lineWords = lines[l];
+  for (var li = 0; li < lines.length; li++) {
+    var lineWords = lines[li];
     var lineText = lineWords.join(' ');
     var lineW = ctx.measureText(lineText).width;
     var originX = Math.round((W - lineW) / 2);
-    var y = startY + l * lh;
+    var lineY = startY + li * lh;
 
-    // Draw full line white
+    // Draw full line in white
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(lineText, originX, y);
+    ctx.fillText(lineText, originX, lineY);
 
-    // Overdraw yellow words using exact prefix measurement
-    for (var w = 0; w < lineWords.length; w++) {
-      if (yellowSet[lineWords[w]]) {
-        var prefix = lineWords.slice(0, w).join(' ');
+    // Overdraw yellow words
+    for (var wi = 0; wi < lineWords.length; wi++) {
+      if (yellowSet[lineWords[wi]]) {
+        var prefix = lineWords.slice(0, wi).join(' ');
         var offsetX = prefix.length > 0 ? ctx.measureText(prefix + ' ').width : 0;
         ctx.fillStyle = '#FFE500';
-        ctx.fillText(lineWords[w], originX + offsetX, y);
+        ctx.fillText(lineWords[wi], originX + offsetX, lineY);
       }
     }
   }
 
-  ctx.font = '900 20px Impact, Arial Black, Arial';
+  ctx.font = '900 ' + Math.round(20 * scale) + 'px Impact, Arial Black, Arial';
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
-  ctx.fillText('LEARN MORE', W / 2, H - 40);
-}
-
-// Paste your Google Apps Script URL here:
-var SHEET_URL = '';
-
-async function pushToSheet() {
-  if (!SHEET_URL) {
-    alert('Voeg eerst je Google Apps Script URL toe in de code (SHEET_URL variabele).');
-    return;
-  }
-  var btn = document.getElementById('sheetbtn');
-  var status = document.getElementById('sheetstatus');
-  btn.disabled = true;
-  btn.textContent = '⏳ Pushing...';
-  status.style.display = 'none';
-
-  var script = document.getElementById('outscript').innerText;
-  var text = document.getElementById('outtext').innerText;
-  var headline = document.getElementById('outheadline').innerText;
-  var topic = document.getElementById('topic').value.trim();
-  var date = new Date().toLocaleString();
-
-  try {
-    await fetch(SHEET_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        date: date,
-        topic: topic,
-        script: script,
-        text: text,
-        headline: headline
-      })
-    });
-    status.textContent = '✓ Succesvol naar Google Sheet gestuurd!';
-    status.style.color = '#0f9d58';
-  } catch(e) {
-    status.textContent = 'Fout: ' + e.message;
-    status.style.color = '#cc0000';
-  }
-  status.style.display = 'block';
-  btn.disabled = false;
-  btn.textContent = '📊 Push to Sheet';
+  ctx.fillText('LEARN MORE', W / 2, H - Math.round(40 * scale));
 }
 
 function downloadPNG() {
