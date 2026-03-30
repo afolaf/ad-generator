@@ -54,11 +54,14 @@ hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
   <div class="card" id="adcard" style="display:none;">
     <div style="display:flex;justify-content:center;margin-bottom:20px;">
       <canvas id="adcanvas" width="460" height="460" style="border-radius:8px;display:block;"></canvas>
+    <canvas id="adcanvas-hd" width="1080" height="1080" style="display:none;"></canvas>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:16px;">
       <button class="btn-sec" onclick="downloadPNG()">Download PNG</button>
       <button onclick="saveZIP()" style="background:#1a1a1a;color:#fff;border:none;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">💾 Save Ad (ZIP)</button>
+      <button id="sheetbtn" onclick="pushToSheet()" style="background:#0f9d58;color:#fff;border:none;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;">📊 Push to Sheet</button>
     </div>
+    <div id="sheetstatus" style="font-size:13px;margin-bottom:8px;display:none;"></div>
     <hr>
     <div class="lbl">Creative Script</div>
     <div class="val" id="outscript"></div>
@@ -136,7 +139,8 @@ async function generate() {
 
     var w = d.white.toUpperCase();
     var y = d.yellow.toUpperCase();
-    drawCanvas(w, y);
+    drawCanvas('adcanvas', 460, w, y);
+    drawCanvas('adcanvas-hd', 1080, w, y);
     document.getElementById('outscript').innerHTML = w + ' <span style="color:#b8860b;font-weight:600">' + y + '</span>';
     document.getElementById('outtext').textContent = d.text;
     document.getElementById('outheadline').textContent = d.headline;
@@ -221,10 +225,54 @@ function drawCanvas(white, yellow) {
   ctx.fillText('LEARN MORE', W / 2, H - 40);
 }
 
+// Paste your Google Apps Script URL here:
+var SHEET_URL = '';
+
+async function pushToSheet() {
+  if (!SHEET_URL) {
+    alert('Voeg eerst je Google Apps Script URL toe in de code (SHEET_URL variabele).');
+    return;
+  }
+  var btn = document.getElementById('sheetbtn');
+  var status = document.getElementById('sheetstatus');
+  btn.disabled = true;
+  btn.textContent = '⏳ Pushing...';
+  status.style.display = 'none';
+
+  var script = document.getElementById('outscript').innerText;
+  var text = document.getElementById('outtext').innerText;
+  var headline = document.getElementById('outheadline').innerText;
+  var topic = document.getElementById('topic').value.trim();
+  var date = new Date().toLocaleString();
+
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        date: date,
+        topic: topic,
+        script: script,
+        text: text,
+        headline: headline
+      })
+    });
+    status.textContent = '✓ Succesvol naar Google Sheet gestuurd!';
+    status.style.color = '#0f9d58';
+  } catch(e) {
+    status.textContent = 'Fout: ' + e.message;
+    status.style.color = '#cc0000';
+  }
+  status.style.display = 'block';
+  btn.disabled = false;
+  btn.textContent = '📊 Push to Sheet';
+}
+
 function downloadPNG() {
   var a = document.createElement('a');
-  a.download = 'ad.png';
-  a.href = document.getElementById('adcanvas').toDataURL('image/png');
+  a.download = 'ad-1080x1080.png';
+  a.href = document.getElementById('adcanvas-hd').toDataURL('image/png');
   a.click();
 }
 
@@ -237,7 +285,7 @@ async function saveZIP() {
   var headline = document.getElementById('outheadline').innerText;
   var txt = 'Topic: ' + topic + '\n\nCreative Script:\n' + script + '\nLearn More\n\nText:\n' + text + '\n\nHeadline:\n' + headline;
   var zip = new JSZip();
-  zip.file('ad.png', document.getElementById('adcanvas').toDataURL('image/png').split(',')[1], {base64:true});
+  zip.file('ad-1080x1080.png', document.getElementById('adcanvas-hd').toDataURL('image/png').split(',')[1], {base64:true});
   zip.file('copy.txt', txt);
   var blob = await zip.generateAsync({type:'blob'});
   var a = document.createElement('a');
