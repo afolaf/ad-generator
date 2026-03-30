@@ -137,11 +137,11 @@ async function generate() {
     var d = await r.json();
     if (!r.ok) throw new Error(d.error || 'Server error');
 
-    var w = d.white.toUpperCase();
-    var y = d.yellow.toUpperCase();
-    drawCanvas('adcanvas', 460, w, y);
-    drawCanvas('adcanvas-hd', 1080, w, y);
-    document.getElementById('outscript').innerHTML = w + ' <span style="color:#b8860b;font-weight:600">' + y + '</span>';
+    var wh = d.white.toUpperCase();
+    var ye = d.yellow.toUpperCase();
+    drawCanvas('adcanvas', 460, wh, ye);
+    drawCanvas('adcanvas-hd', 1080, wh, ye);
+    document.getElementById('outscript').innerHTML = wh + ' <span style="color:#b8860b;font-weight:600">' + ye + '</span>';
     document.getElementById('outtext').textContent = d.text;
     document.getElementById('outheadline').textContent = d.headline;
     document.getElementById('adcard').style.display = 'block';
